@@ -17,6 +17,8 @@ public class FileTable {
 		// increment this inode's count
 		// immediately write back this inode to the disk
 		// return a reference to this file (structure) table entry
+		
+		return null;
 	}
 
 	public synchronized boolean ffree( FileTableEntry e ) {
@@ -24,6 +26,8 @@ public class FileTable {
 		// save the corresponding inode to the disk
 		// free this file table entry.
 		// return true if this file table entry found in my table
+		
+		return false;	// TODO: Actually write this
 	}
 
 	public synchronized boolean fempty( ) {
