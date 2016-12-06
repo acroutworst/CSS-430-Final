@@ -10,6 +10,7 @@ public class Inode {
 	private final static int directSize = 11;      // # direct pointers
 	
 	private final static int iNodeStorageBlock = 1;	// Location that Inodes are stored on the disk
+	private final static int numINodesPerBlock = Disk.blockSize / iNodeSize;
 	
 	public int length;                             // file size in bytes
 	public short count;                            // # file-table entries pointing to this
@@ -37,9 +38,12 @@ public class Inode {
 	Inode( short iNumber ) {                       // retrieving inode from disk
 		// design it by yourself.
 		byte[] blockData = new byte[Disk.blockSize];
-		SysLib.rawread(iNodeStorageBlock, blockData);
+		
+		int blockNumber = iNodeStorageBlock + iNumber / numINodesPerBlock;
+		
+		SysLib.rawread(blockNumber, blockData);
 		ByteBuffer builder = ByteBuffer.allocate(iNodeSize);
-		builder.put(blockData, iNodeSize*iNumber, iNodeSize);
+		builder.put(blockData, iNodeSize * (iNumber % numINodesPerBlock), iNodeSize);
 		
 		length = builder.getInt();
 		count = builder.getShort();
@@ -73,13 +77,14 @@ public class Inode {
 		
 		aggregator.putShort(indirect);
 		
-		SysLib.rawread(iNodeStorageBlock, blockData);
+		
+		SysLib.rawread(iNodeStorageBlock + (iNumber % numINodesPerBlock), blockData);
 		
 		int arrayIndex = iNodeSize * iNumber;
 		
 		System.arraycopy(aggregator.array(), 0, blockData, arrayIndex, iNodeSize);
 		
-		SysLib.rawwrite(iNodeStorageBlock, blockData);
+		SysLib.rawwrite(iNodeStorageBlock + (iNumber % numINodesPerBlock), blockData);
 		
 		// TODO: Look into when the operations can fail, particularly the read and write operations
 		return 0;
