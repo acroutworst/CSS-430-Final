@@ -3,6 +3,8 @@
 // File System Project
 // December 12, 2016
 
+// source: http://courses.washington.edu/css430/prog/CSS430FinalProject.pdf
+
 import java.nio.ByteBuffer;
 
 public class Inode {
@@ -87,6 +89,32 @@ public class Inode {
 		SysLib.rawwrite(iNodeStorageBlock + (iNumber % numINodesPerBlock), blockData);
 		
 		// TODO: Look into when the operations can fail, particularly the read and write operations
+		return 0;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public short getIndexBlockNumber() {
+		return 0;
+	}
+	
+	/**
+	 * 
+	 * @param indexBlockNumber
+	 * @return
+	 */
+	public Boolean setIndexBlock(short indexBlockNumber) {
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @param offset
+	 * @return
+	 */
+	public short findTargetBlock(int offset) {
 		return 0;
 	}
 }

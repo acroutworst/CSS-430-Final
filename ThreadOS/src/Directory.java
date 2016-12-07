@@ -3,6 +3,8 @@
 // File System Project
 // December 12, 2016
 
+// source: http://courses.washington.edu/css430/prog/CSS430FinalProject.pdf
+
 import java.util.Arrays;
 
 public class Directory {
@@ -35,7 +37,26 @@ public class Directory {
 		// note: only meaningfull directory information should be converted
 		// into bytes.
 		
+		
+		
 		return null;
+	}
+	
+	/**
+	 * Write entire directory file contents in bytes
+	 * @param data
+	 */
+	public void byte2directory(byte data[]) {
+		int offset = 0;
+		
+		for(int i = 0; i < fsize.length; i++) {
+			fsize[i] = SysLib.bytes2int(data, offset);
+		}
+		
+		for(int i = 0; i < fnames.length; i++) {
+			String fname = new String(data, offset, maxChars*2);
+			fname.getChars(0, fsize[i], fnames[i], 0);
+		}
 	}
 
 	public short ialloc( String filename ) {

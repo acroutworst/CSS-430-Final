@@ -1,3 +1,10 @@
+// Adam Croutworst and Logan McArthur
+// CSS 430
+// File System Project
+// December 12, 2016
+
+// source: http://courses.washington.edu/css430/prog/CSS430FinalProject.pdf
+
 class SuperBlock {
 	public int totalBlocks; // the number of disk blocks
 	public int totalInodes; // the number of inodes
@@ -37,5 +44,26 @@ class SuperBlock {
 	public void format(int blocks) {
 		
 	}
+	
+	/**
+	 * Write back totalBlocks, inodesBlock, and freeList to disk 
+	 */
+	public void sync() {
+		
+	}
+	
+	/**
+	 * Dequeue the top block from the free list
+	 */
+	public void getFreeBlock() {
+		
+	}
 
+	/**
+	 * Enqueue a given block to the end of the free list
+	 * @param blockNumber
+	 */
+	public void returnBlock(int blockNumber) {
+		
+	}
 }

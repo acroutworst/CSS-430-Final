@@ -3,12 +3,20 @@
 // File System Project
 // December 12, 2016
 
+// source: http://courses.washington.edu/css430/prog/CSS430FinalProject.pdf
+
 import java.util.Vector;
 
 public class FileTable {
 
-	private Vector table;         // the actual entity of this file table
+	private Vector<FileTableEntry> table;         // the actual entity of this file table
 	private Directory dir;        // the root directory 
+	private enum flag {
+		READ,
+		WRITE
+	}
+	private final int READ = 0;
+	private final int WRITE = 1;
 
 	public FileTable( Directory directory ) { // constructor
 		table = new Vector( );     // instantiate a file (structure) table
@@ -23,7 +31,45 @@ public class FileTable {
 		// immediately write back this inode to the disk
 		// return a reference to this file (structure) table entry
 		
-		return null;
+		short iNumber = -1;
+		Inode inode = null;
+		
+		while(true) {
+			iNumber = filename.equals("/") ? 0 : dir.namei(filename);
+			
+			if(iNumber >= 0) {
+				inode = new Inode(iNumber);
+				
+				if(mode.equals("r")) {
+					if(inode.flag == READ) {
+						break;
+					} else if(inode.flag == WRITE) {
+						try { 
+							wait(); 
+						} catch (InterruptedException e) { }
+					} else {
+						iNumber = -1;
+						return null;
+					}
+				} else if(mode.equals("w")) {
+					// Cannot write after write
+					if(inode.flag == READ) {
+						break;
+					} else {
+						iNumber = -1;
+						return null;
+					}
+				}
+			}
+		}
+		
+		inode.count++;
+		inode.toDisk(iNumber);
+		
+		FileTableEntry entry = new FileTableEntry(inode, iNumber, mode);
+		table.addElement(entry);
+		
+		return entry;
 	}
 
 	public synchronized boolean ffree( FileTableEntry e ) {
