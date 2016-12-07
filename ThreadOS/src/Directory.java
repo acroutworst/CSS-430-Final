@@ -1,3 +1,8 @@
+// Adam Croutworst and Logan McArthur
+// CSS 430
+// File System Project
+// December 12, 2016
+
 import java.util.Arrays;
 
 public class Directory {

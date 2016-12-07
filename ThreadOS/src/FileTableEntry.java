@@ -1,3 +1,8 @@
+// Adam Croutworst and Logan McArthur
+// CSS 430
+// File System Project
+// December 12, 2016
+
 public class FileTableEntry {          // Each table entry should have
 	public int seekPtr;                 //    a file seek pointer
 	public final Inode inode;           //    a reference to its inode
