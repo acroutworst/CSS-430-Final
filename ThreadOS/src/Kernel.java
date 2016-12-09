@@ -68,7 +68,7 @@ private static BufferedReader input
 = new BufferedReader( new InputStreamReader( System.in ) );
 
 // FileSystem Instantiation with 1000 files
-FileSystem fs = new FileSystem(1000);
+private static FileSystem fs;
 
 // The heart of Kernel
 public static int interrupt( int irq, int cmd, int param, Object args ) {
@@ -87,6 +87,9 @@ case INTERRUPT_SOFTWARE: // System calls
 
     // instantiate a cache memory
     cache = new Cache( disk.blockSize, 10 );
+    
+    // instantiate a file system
+    fs = new FileSystem(1000);
 
     // instantiate synchronized queues
     ioQueue = new SyncQueue( );
