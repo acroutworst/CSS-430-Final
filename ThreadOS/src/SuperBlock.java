@@ -10,6 +10,7 @@ class SuperBlock {
 	public int totalInodes; // the number of inodes
 	public int freeList;    // the block number of the free list's head
 	private final int defaultInodeBlocks = 64;
+	public int inodeBlocks;
 
 	/**
 	 * Creates the first disk block, block 0, the SuperBlock

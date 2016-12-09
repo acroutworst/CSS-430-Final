@@ -67,6 +67,9 @@ private final static int COND_DISK_FIN = 2; // wait condition
 private static BufferedReader input
 = new BufferedReader( new InputStreamReader( System.in ) );
 
+// FileSystem Instantiation with 1000 files
+FileSystem fs = new FileSystem(1000);
+
 // The heart of Kernel
 public static int interrupt( int irq, int cmd, int param, Object args ) {
 TCB myTcb;
