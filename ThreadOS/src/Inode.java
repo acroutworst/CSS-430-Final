@@ -94,27 +94,44 @@ public class Inode {
 	
 	/**
 	 * 
-	 * @return
+	 * @return The index block for this Inode
 	 */
 	public short getIndexBlockNumber() {
-		return 0;
+		return indirect;
 	}
 	
 	/**
 	 * 
-	 * @param indexBlockNumber
-	 * @return
+	 * @param indexBlockNumber The block to use as the index block for this Inode
+	 * @return true when the passed block number is accepted as the index block
 	 */
-	public Boolean setIndexBlock(short indexBlockNumber) {
+	public boolean setIndexBlock(short indexBlockNumber) {
+		if (indirect != -1)
+		{
+			indirect = indexBlockNumber;
+			return true;
+		}
 		return false;
 	}
 	
 	/**
+	 * Determine the block that is home to the data existing at offset
 	 * 
-	 * @param offset
-	 * @return
+	 * @param offset The offset into the File
+	 * @return The block that the data exists in
 	 */
 	public short findTargetBlock(int offset) {
-		return 0;
+		short blk = (short)(offset / Disk.blockSize);
+		
+		if (blk < direct.length)
+		{
+			return blk;
+		}
+		blk -= direct.length;
+		
+		byte[] data = new byte[Disk.blockSize];
+		SysLib.rawread(indirect,data);
+		
+		return SysLib.bytes2short(data, (blk * 2));
 	}
 }
