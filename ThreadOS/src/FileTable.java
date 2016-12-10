@@ -63,7 +63,15 @@ public class FileTable {
 			}
 			else	// No file was found
 			{
-				
+				if(mode.equals("r")) {
+					return null;
+				} else if(mode.equals("w") || mode.equals("w+") || mode.equals("a")) {
+					iNumber = dir.ialloc(filename);
+					
+					inode = new Inode(iNumber);
+					
+					break;
+				} 
 			}
 		}
 
