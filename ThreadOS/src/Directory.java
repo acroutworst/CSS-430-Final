@@ -70,13 +70,29 @@ public class Directory {
 	public short ialloc( String filename ) {
 		// filename is the one of a file to be created.
 		// allocates a new inode number for this filename
-		
+		short iNum = 0;
+		for ( ; iNum < fsize.length; iNum++)
+		{
+			if (fsize[iNum] == 0)
+			{
+				fsize[iNum] = filename.length( );        
+				filename.getChars( 0, fsize[iNum], fnames[iNum], 0 );
+				return iNum;
+			}
+		}
 		return -1;
 	}
 
 	public boolean ifree( short iNumber ) {
 		// deallocates this inumber (inode number)
 		// the corresponding file will be deleted.
+		
+		if (fsize[iNumber] > 0)
+		{
+			fsize[iNumber] = 0;
+			Arrays.fill(fnames[iNumber], '\0');
+			return true;
+		}
 		
 		return false;	// TODO: Actually write this method
 	}

@@ -61,6 +61,10 @@ public class FileTable {
 					}
 				}
 			}
+			else	// No file was found
+			{
+				
+			}
 		}
 
 		inode.count++;
