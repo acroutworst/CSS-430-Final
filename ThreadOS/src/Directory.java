@@ -13,7 +13,7 @@ public class Directory {
 	// Directory entries
 	private int fsize[];        // each element stores a different file size.
 	private char fnames[][];    // each element stores a different file name.
-
+	
 	public Directory( int maxInumber ) { // directory constructor
 		fsize = new int[maxInumber];     // maxInumber = max files
 		for ( int i = 0; i < maxInumber; i++ ) 
@@ -28,9 +28,20 @@ public class Directory {
 		// converts and return Directory information into a plain byte array
 		// this byte array will be written back to disk
 		// note: only meaningfull directory information should be converted
-		// into bytes.
+		// into bytes.	
+		
+		int offset = 0;
+		byte[] data = new byte[fsize.length];
 		
 		
+		for(int i = 0; i < fsize.length; i++) {
+			SysLib.int2bytes(fsize[i], data, offset);
+		}
+		
+		for(int i = 0; i < fsize.length; i++) {
+			String fname = new String(data, offset, maxChars*2);
+			System.arraycopy(fname.getBytes(), 0, data, offset, fname.getBytes().length);
+		}
 		
 		return null;
 	}
