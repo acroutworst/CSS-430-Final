@@ -50,21 +50,41 @@ class SuperBlock {
 	 * Write back totalBlocks, inodesBlock, and freeList to disk 
 	 */
 	public void sync() {
+		byte[] blockData = new byte[Disk.blockSize];
+		SysLib.int2bytes(totalBlocks, blockData, 0);
+		SysLib.int2bytes(totalInodes, blockData, 4);
+		SysLib.int2bytes(freeList, blockData, 8);
 		
+		SysLib.rawwrite(0, blockData);
 	}
 	
 	/**
 	 * Dequeue the top block from the free list
 	 */
-	public void getFreeBlock() {
+	public int getFreeBlock() {
 		
+		byte[] data = new byte[Disk.blockSize];
+		SysLib.rawread(freeList, data);
+		
+		int result = SysLib.bytes2int(data, 0);
+		
+		int tmp = freeList;
+		freeList = result;
+		
+		return tmp;
 	}
 
 	/**
-	 * Enqueue a given block to the end of the free list
+	 * Enqueue a given block to the front of the free list
 	 * @param blockNumber
 	 */
 	public void returnBlock(int blockNumber) {
 		
+		byte[] data = new byte[Disk.blockSize];
+		SysLib.int2bytes(freeList, data, 0);
+		
+		SysLib.rawwrite(blockNumber, data);
+		
+		freeList = blockNumber;
 	}
 }
