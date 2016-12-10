@@ -30,16 +30,16 @@ public class FileTable {
 		// increment this inode's count
 		// immediately write back this inode to the disk
 		// return a reference to this file (structure) table entry
-		
+
 		short iNumber = -1;
 		Inode inode = null;
-		
+
 		while(true) {
 			iNumber = filename.equals("/") ? 0 : dir.namei(filename);
-			
+
 			if(iNumber >= 0) {
 				inode = new Inode(iNumber);
-				
+
 				if(mode.equals("r")) {
 					if(inode.flag == READ) {
 						break;
@@ -62,13 +62,13 @@ public class FileTable {
 				}
 			}
 		}
-		
+
 		inode.count++;
 		inode.toDisk(iNumber);
-		
+
 		FileTableEntry entry = new FileTableEntry(inode, iNumber, mode);
 		table.addElement(entry);
-		
+
 		return entry;
 	}
 
@@ -77,12 +77,12 @@ public class FileTable {
 		// save the corresponding inode to the disk
 		// free this file table entry.
 		// return true if this file table entry found in my table
-		
+
 		e.inode.toDisk(e.iNumber);
-		
+
 		return table.remove(e);
-		
-//		return false;	// TODO: Actually write this
+
+		//		return false;	// TODO: Actually write this
 	}
 
 	public synchronized boolean fempty( ) {

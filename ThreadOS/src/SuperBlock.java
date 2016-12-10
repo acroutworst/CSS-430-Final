@@ -60,13 +60,13 @@ class SuperBlock {
 //		SysLib.int2bytes(freeList+1, data, 0);
 //		SysLib.rawwrite(freeList, data);
 //		
-		for (int iter = freeList; iter < totalBlocks; iter++)
-		{
-			SysLib.int2bytes(iter + 1, data, 0);
-			
-			SysLib.rawwrite(iter, data);
-
-		}
+//		for (int iter = freeList; iter < totalBlocks; iter++)
+//		{
+//			SysLib.int2bytes(iter + 1, data, 0);
+//			
+//			SysLib.rawwrite(iter, data);
+//
+//		}
 		
 		sync();
 	}

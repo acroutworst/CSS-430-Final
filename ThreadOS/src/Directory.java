@@ -61,7 +61,7 @@ public class Directory {
 		}
 		
 		for(int i = 0; i < fnames.length; i++) {
-			String fname = new String(data, offset, maxChars*2);
+			String fname = new String(data, offset, fsize[i]);
 			fname.getChars(0, fsize[i], fnames[i], 0);
 			offset += maxChars*2;
 		}
