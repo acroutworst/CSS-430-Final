@@ -179,7 +179,7 @@ public class Kernel
 					System.out.println("threadOS: caused read errors");
 					return ERROR;
 				}
-				// return FileSystem.read( param, byte args[] );
+				//return fs.read( fs.open, (byte[])args );	// TODO: Link together read method
 				return ERROR;
 			case WRITE:
 				switch ( param ) {

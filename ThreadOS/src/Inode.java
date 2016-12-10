@@ -81,14 +81,16 @@ public class Inode {
 		
 		aggregator.putShort(indirect);
 		
+		int blockNumber = iNodeStorageBlock + iNumber / numINodesPerBlock;
 		
-		SysLib.rawread(iNodeStorageBlock + (iNumber % numINodesPerBlock), blockData);
+		SysLib.rawread(blockNumber, blockData);
 		
-		int arrayIndex = iNodeSize * iNumber;
+//		int arrayIndex = iNodeSize * iNumber;
+		int arrayIndex = iNodeSize * (iNumber % numINodesPerBlock);
 		
 		System.arraycopy(aggregator.array(), 0, blockData, arrayIndex, iNodeSize);
 		
-		SysLib.rawwrite(iNodeStorageBlock + (iNumber % numINodesPerBlock), blockData);
+		SysLib.rawwrite(blockNumber, blockData);
 		
 		// TODO: Look into when the operations can fail, particularly the read and write operations
 		return 0;
