@@ -31,19 +31,21 @@ public class Directory {
 		// into bytes.	
 		
 		int offset = 0;
-		byte[] data = new byte[fsize.length];
+		byte[] data = new byte[fsize.length*4 + fnames.length*(maxChars*2)];
 		
 		
 		for(int i = 0; i < fsize.length; i++) {
 			SysLib.int2bytes(fsize[i], data, offset);
+			offset += 4;
 		}
 		
 		for(int i = 0; i < fsize.length; i++) {
 			String fname = new String(data, offset, maxChars*2);
 			System.arraycopy(fname.getBytes(), 0, data, offset, fname.getBytes().length);
+			offset += maxChars*2;
 		}
 		
-		return null;
+		return data;
 	}
 	
 	/**
@@ -55,11 +57,13 @@ public class Directory {
 		
 		for(int i = 0; i < fsize.length; i++) {
 			fsize[i] = SysLib.bytes2int(data, offset);
+			offset += 4;
 		}
 		
 		for(int i = 0; i < fnames.length; i++) {
 			String fname = new String(data, offset, maxChars*2);
 			fname.getChars(0, fsize[i], fnames[i], 0);
+			offset += maxChars*2;
 		}
 	}
 
