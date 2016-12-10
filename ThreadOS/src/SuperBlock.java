@@ -24,6 +24,9 @@ class SuperBlock {
 		
 		totalBlocks = SysLib.bytes2int(blockData, 0);
 		totalInodes = SysLib.bytes2int(blockData, 4);
+		
+		inodeBlocks = totalInodes;		// TODO: Might not be entirely accurate, maybe changes based on how many files there are currently
+		
 		freeList = SysLib.bytes2int(blockData, 8);
 		
 		if((totalBlocks == diskSize) 
@@ -42,10 +45,32 @@ class SuperBlock {
 	 * @param blocks
 	 */
 	public void format(int blocks) {
-		this.totalBlocks = blocks;
-		this.inodeBlocks = blocks;
-	
+		
+		totalInodes = blocks;
+		inodeBlocks = totalInodes;
+		
+		int iNodesPerBlock = Disk.blockSize / 32;
+		
+		int numINodeStorageBlocks = (int) Math.ceil(blocks / iNodesPerBlock);
+		
+		this.freeList = numINodeStorageBlocks + 1;
+		
+		byte[] data = new byte[Disk.blockSize];
+		
+//		SysLib.int2bytes(freeList+1, data, 0);
+//		SysLib.rawwrite(freeList, data);
+//		
+		for (int iter = freeList; iter < totalBlocks; iter++)
+		{
+			SysLib.int2bytes(iter + 1, data, 0);
+			
+			SysLib.rawwrite(iter, data);
+
+		}
+		
+		sync();
 	}
+	
 	
 	/**
 	 * Write back totalBlocks, inodesBlock, and freeList to disk 
