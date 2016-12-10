@@ -78,7 +78,11 @@ public class FileTable {
 		// free this file table entry.
 		// return true if this file table entry found in my table
 		
-		return false;	// TODO: Actually write this
+		e.inode.toDisk(e.iNumber);
+		
+		return table.remove(e);
+		
+//		return false;	// TODO: Actually write this
 	}
 
 	public synchronized boolean fempty( ) {
