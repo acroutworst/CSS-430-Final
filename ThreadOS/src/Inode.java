@@ -47,6 +47,8 @@ public class Inode {
 		ByteBuffer builder = ByteBuffer.allocate(iNodeSize);
 		builder.put(blockData, iNodeSize * (iNumber % numINodesPerBlock), iNodeSize);
 		
+		builder.rewind();
+		
 		length = builder.getInt();
 		count = builder.getShort();
 		flag = builder.getShort();

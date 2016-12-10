@@ -18,8 +18,7 @@ class SuperBlock {
 	 * @param diskSize The disk size of the superblock to compare to total blocks
 	 */
 	public SuperBlock( int diskSize ) {
-		SysLib.cout("SuperBlock constructor: " + diskSize);
-		
+
 		byte[] blockData = new byte[Disk.blockSize];
 		SysLib.rawread(0, blockData);
 		
@@ -43,7 +42,9 @@ class SuperBlock {
 	 * @param blocks
 	 */
 	public void format(int blocks) {
-		
+		this.totalBlocks = blocks;
+		this.inodeBlocks = blocks;
+	
 	}
 	
 	/**
