@@ -20,23 +20,23 @@ class SuperBlock {
 	 */
 	public SuperBlock( int diskSize ) {
 
-		byte[] blockData = new byte[Disk.blockSize];
-		SysLib.rawread(0, blockData);
+		byte[] blockData = new byte[Disk.blockSize];	// Set block data size
+		SysLib.rawread(0, blockData);					// Read block data
 		
-		totalBlocks = SysLib.bytes2int(blockData, 0);
-		totalInodes = SysLib.bytes2int(blockData, 4);
+		totalBlocks = SysLib.bytes2int(blockData, 0);	// Convert bytes to int
+		totalInodes = SysLib.bytes2int(blockData, 4);	// Convert bytes to int with offset of 4 
 		
 		inodeBlocks = totalInodes;		// TODO: Might not be entirely accurate, maybe changes based on how many files there are currently
 		
-		freeList = SysLib.bytes2int(blockData, 8);
+		freeList = SysLib.bytes2int(blockData, 8);		// Convert bytes to int with offset of 8
 		
-		if((totalBlocks == diskSize) 
-			&& (totalInodes >= 0) 
-			&& freeList >= 0) { 
-			return;
-		} else {
-			totalBlocks = diskSize;
-			format(defaultInodeBlocks);
+		if((totalBlocks == diskSize) 					// If total size and disk size is a match,	
+			&& (totalInodes >= 0) 						// and there is an Inode,
+			&& freeList >= 0) { 						// and there is a list of free blocks,
+			return;										// return
+		} else {										
+			totalBlocks = diskSize;						// Otherwise, set disk size to total blocks
+			format(defaultInodeBlocks);					// and format disk 
 		}
 	}
 	
@@ -78,12 +78,13 @@ class SuperBlock {
 	 * Write back totalBlocks, inodesBlock, and freeList to disk 
 	 */
 	public void sync() {
-		byte[] blockData = new byte[Disk.blockSize];
-		SysLib.int2bytes(totalBlocks, blockData, 0);
-		SysLib.int2bytes(totalInodes, blockData, 4);
-		SysLib.int2bytes(freeList, blockData, 8);
+		byte[] blockData = new byte[Disk.blockSize];		// Set block data size
 		
-		SysLib.rawwrite(0, blockData);
+		SysLib.int2bytes(totalBlocks, blockData, 0);		// Convert int to bytes 
+		SysLib.int2bytes(totalInodes, blockData, 4);		// Convert int to bytes with offset of 4
+		SysLib.int2bytes(freeList, blockData, 8);			// Convert int to bytes with offset of 8
+		
+		SysLib.rawwrite(0, blockData);						// Write block back
 	}
 	
 	/**
@@ -91,15 +92,16 @@ class SuperBlock {
 	 */
 	public int getFreeBlock() {
 		
-		byte[] data = new byte[Disk.blockSize];
-		SysLib.rawread(freeList, data);
+		byte[] data = new byte[Disk.blockSize];				// Set block data size			
 		
-		int result = SysLib.bytes2int(data, 0);
+		SysLib.rawread(freeList, data);						// Read free list of blocks
 		
-		int tmp = freeList;
-		freeList = result;
+		int result = SysLib.bytes2int(data, 0);				// Convert bytes to int
 		
-		return tmp;
+		int tmp = freeList;									// Save free list
+		freeList = result;									// Assign converted int to free list 
+			
+		return tmp;											// and return list of free blocks
 	}
 
 	/**
@@ -108,11 +110,11 @@ class SuperBlock {
 	 */
 	public void returnBlock(int blockNumber) {
 		
-		byte[] data = new byte[Disk.blockSize];
-		SysLib.int2bytes(freeList, data, 0);
+		byte[] data = new byte[Disk.blockSize];				// Set block data size
+		SysLib.int2bytes(freeList, data, 0);				// Convert int to bytes 
 		
-		SysLib.rawwrite(blockNumber, data);
+		SysLib.rawwrite(blockNumber, data);					// Write block data
 		
-		freeList = blockNumber;
+		freeList = blockNumber;								// Return block number 
 	}
 }
