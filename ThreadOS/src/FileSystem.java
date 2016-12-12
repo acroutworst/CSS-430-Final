@@ -105,7 +105,11 @@ public class FileSystem {
 	 * @param buffer
 	 * @return
 	 */
-	public synchronized int read(FileTableEntry entry, byte[] buffer) {
+	public synchronized int read(FileTableEntry fEnt, byte[] buffer) {
+		if(fEnt.mode != "r") {						// If not read mode,
+			return -1;								// Return error
+		}
+		
 		return 0;
 	}
 	
@@ -116,7 +120,7 @@ public class FileSystem {
 	 * @param buffer
 	 * @return
 	 */
-	public synchronized int write(FileTableEntry entry, byte[] buffer) {
+	public synchronized int write(FileTableEntry fEnt, byte[] buffer) {
 		return 0;
 	}
 	
