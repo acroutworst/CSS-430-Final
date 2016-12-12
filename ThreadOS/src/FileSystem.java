@@ -110,24 +110,45 @@ public class FileSystem {
 		{
 			return 0;				// Don't read if the mode isn't set to it
 		}
-		int blockNumber = filetable.retrieveInode(entry).findTargetBlock(entry.seekPtr);
+		
+		
 		int intraBlockOffset = entry.seekPtr % Disk.blockSize;			// Find out where to start reading in the block
 		int bytesRead = 0;
 		
 		byte[] blockData = new byte[Disk.blockSize];
-		SysLib.rawread(blockNumber, blockData);
 		
 		while (bytesRead < buffer.length && bytesRead + entry.seekPtr < filetable.retrieveInode(entry).length)
 		{
-			int readInto = (buffer.length > Disk.blockSize - (intraBlockOffset + bytesRead) ? Disk.blockSize - (intraBlockOffset + bytesRead) : buffer.length);
+			
+			int blockNumber = filetable.retrieveInode(entry).findTargetBlock(entry.seekPtr + bytesRead);
 			
 			SysLib.rawread(blockNumber, blockData);
+			
+			//int readInto = (buffer.length > Disk.blockSize - (intraBlockOffset + bytesRead) ? Disk.blockSize - (intraBlockOffset + bytesRead) : buffer.length);
+			int readInto = buffer.length;
+			if (readInto > Disk.blockSize)
+			{
+				readInto = Disk.blockSize;
+			}
+			if (readInto + intraBlockOffset - bytesRead > Disk.blockSize)
+			{
+				readInto = Disk.blockSize - (intraBlockOffset + bytesRead);
+			}
+			SysLib.rawread(blockNumber, blockData);
+			
+			if (readInto > blockData.length)
+				SysLib.cout("readInto greater\n");
+			
+			if (intraBlockOffset > blockData.length)
+				SysLib.cout("intraBlock greater\n");
+			
+			if (bytesRead > buffer.length)
+				SysLib.cout("bytesRead greater\n");
 			
 			System.arraycopy(blockData, intraBlockOffset, buffer, bytesRead, readInto);
 			
 			bytesRead += readInto;
 			intraBlockOffset = 0;
-			blockNumber++;
 			
 		}
 		
@@ -174,7 +195,7 @@ public class FileSystem {
 			
 			if (blockNumber == -1)
 			{
-				filetable.retrieveInode(entry).setTargetBlock(entry.seekPtr+bytesWritten, (short)superblock.getFreeBlock(), entry.iNumber);
+				filetable.retrieveInode(entry).setTargetBlock(entry.seekPtr+bytesWritten, superblock, entry.iNumber);
 				blockNumber = filetable.retrieveInode(entry).findTargetBlock(entry.seekPtr + bytesWritten);
 			}
 			// TODO: Maybe link these two if statements together into an else if so that we won't accidently read from a baby block

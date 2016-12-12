@@ -63,22 +63,25 @@ class SuperBlock {
 		SysLib.int2bytes(freeList+1, data, 0);			// Convert int to bytes of free list
 		SysLib.rawwrite(freeList, data);				// Now write the free list
 		
-		for (int iter = freeList; iter < totalBlocks; iter++) { // Iterate through total blocks
+		for (int iter = freeList; iter < totalBlocks - 1; iter++) { // Iterate through total blocks
 			SysLib.int2bytes(iter + 1, data, 0);		// Convert int to bytes
 			SysLib.rawwrite(iter, data);				// Write to disk
 		}
 		
+		SysLib.int2bytes(-1, data,0);
+		SysLib.rawwrite(totalBlocks-1, data);
+		
 		for (int iter = 0; iter < totalInodes; iter++) { // Iterate through iNodes
 			emptyINodes = new Inode();					// Create new iNode
 			
-			emptyINodes.setIndexBlock((short)this.getFreeBlock());	// Set the index block now so that we don't worry about it
-			
-			byte[] indexData = new byte[Disk.blockSize];
-			for (int ind = 0; ind < indexData.length; ind+= 2)
-			{
-				SysLib.short2bytes((short)-1, indexData, ind);
-			}
-			SysLib.rawwrite(emptyINodes.getIndexBlockNumber(), indexData);
+//			emptyINodes.setIndexBlock((short)this.getFreeBlock());	// Set the index block now so that we don't worry about it
+//			
+//			byte[] indexData = new byte[Disk.blockSize];
+//			for (int ind = 0; ind < indexData.length; ind+= 2)
+//			{
+//				SysLib.short2bytes((short)-1, indexData, ind);
+//			}
+//			SysLib.rawwrite(emptyINodes.getIndexBlockNumber(), indexData);
 			
 			emptyINodes.toDisk((short)iter);			// Write iNode to disk
 		}
