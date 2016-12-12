@@ -95,7 +95,7 @@ public class FileSystem {
 	 * @return
 	 */
 	public synchronized int fsize(FileTableEntry fEnt) {
-		return fEnt.inode.length;					// Return inode length in the entry
+		return filetable.retrieveInode(fEnt).length;					// Return inode length in the entry
 	}
 	
 	/**
@@ -106,20 +106,20 @@ public class FileSystem {
 	 * @return
 	 */
 	public synchronized int read(FileTableEntry entry, byte[] buffer) {
-		if (!entry.mode.equals("r"))
+		if (!(entry.mode.equals("r") || entry.mode.equals("w+")))
 		{
 			return 0;				// Don't read if the mode isn't set to it
 		}
-		int blockNumber = entry.inode.findTargetBlock(entry.seekPtr);
+		int blockNumber = filetable.retrieveInode(entry).findTargetBlock(entry.seekPtr);
 		int intraBlockOffset = entry.seekPtr % Disk.blockSize;			// Find out where to start reading in the block
 		int bytesRead = 0;
 		
 		byte[] blockData = new byte[Disk.blockSize];
 		SysLib.rawread(blockNumber, blockData);
 		
-		while (bytesRead < buffer.length && bytesRead + entry.seekPtr < entry.inode.length)
+		while (bytesRead < buffer.length && bytesRead + entry.seekPtr < filetable.retrieveInode(entry).length)
 		{
-			int readInto = (buffer.length > Disk.blockSize ? Disk.blockSize : buffer.length) - intraBlockOffset;
+			int readInto = (buffer.length > Disk.blockSize - (intraBlockOffset + bytesRead) ? Disk.blockSize - (intraBlockOffset + bytesRead) : buffer.length);
 			
 			SysLib.rawread(blockNumber, blockData);
 			
@@ -159,14 +159,23 @@ public class FileSystem {
 		while (bytesWritten < buffer.length)
 		{
 			
-			blockNumber = entry.inode.findTargetBlock(entry.seekPtr + bytesWritten);
+			blockNumber = filetable.retrieveInode(entry).findTargetBlock(entry.seekPtr + bytesWritten);
 			
-			int writeInto = (buffer.length > Disk.blockSize ? Disk.blockSize : buffer.length) - intraBlockOffset;
+			//int writeInto = (buffer.length > Disk.blockSize ? Disk.blockSize : buffer.length) - intraBlockOffset - bytesWritten;	// Redo this line
+			int writeInto = buffer.length;
+			if (writeInto > Disk.blockSize)
+			{
+				writeInto = Disk.blockSize;
+			}
+			if (writeInto + intraBlockOffset - bytesWritten > Disk.blockSize)
+			{
+				writeInto = Disk.blockSize - (intraBlockOffset + bytesWritten);
+			}
 			
 			if (blockNumber == -1)
 			{
-				entry.inode.setTargetBlock(entry.seekPtr+bytesWritten, (short)superblock.getFreeBlock());
-				blockNumber = entry.inode.findTargetBlock(entry.seekPtr + bytesWritten);
+				filetable.retrieveInode(entry).setTargetBlock(entry.seekPtr+bytesWritten, (short)superblock.getFreeBlock(), entry.iNumber);
+				blockNumber = filetable.retrieveInode(entry).findTargetBlock(entry.seekPtr + bytesWritten);
 			}
 			// TODO: Maybe link these two if statements together into an else if so that we won't accidently read from a baby block
 			
@@ -180,14 +189,14 @@ public class FileSystem {
 			intraBlockOffset = 0;				// Set it to zero because from now on we start at the beginning of the block
 			
 			SysLib.rawwrite(blockNumber, blockData);
-			
+			//entry.inode.toDisk(entry.iNumber);
 		}
 		
 		entry.seekPtr += bytesWritten;
 		
-		if (entry.seekPtr > entry.inode.length)
+		if (entry.seekPtr > filetable.retrieveInode(entry).length)
 		{
-			entry.inode.length = entry.seekPtr;
+			filetable.retrieveInode(entry).length = entry.seekPtr;
 		}
 		
 		return bytesWritten;
@@ -202,14 +211,14 @@ public class FileSystem {
 	private boolean deallocAllBlocks(FileTableEntry fEnt) {
 		
 		short i = 0;
-		for (; i < fEnt.inode.direct.length; i++) {		// Iterate through direct blocks
-			if (fEnt.inode.direct[i] != -1) {			// If not already empty,
-				fEnt.inode.direct[i] = -1;				// Assign block as free	
+		for (; i < filetable.retrieveInode(fEnt).direct.length; i++) {		// Iterate through direct blocks
+			if (filetable.retrieveInode(fEnt).direct[i] != -1) {			// If not already empty,
+				filetable.retrieveInode(fEnt).direct[i] = -1;				// Assign block as free	
 				superblock.returnBlock(i);				// Enqueue as free block
 			}
 		}
 
-		fEnt.inode.toDisk(fEnt.iNumber);				// Write blocks back to disk
+		filetable.retrieveInode(fEnt).toDisk(fEnt.iNumber);				// Write blocks back to disk
 						
 		return true;									// If valid, return true
 	}
@@ -248,7 +257,7 @@ public class FileSystem {
 		switch(whence) {								// Perform switch case of whence
 		case SEEK_SET: fEnt.seekPtr = offset; break;	// If SET, seek pointer equals offset	
 		case SEEK_CUR: fEnt.seekPtr += offset; break;	// If CUR, seek pointer increments with offset
-		case SEEK_END: fEnt.seekPtr = fEnt.inode.length + offset; break; // If END, seek pointer is relative to EOF
+		case SEEK_END: fEnt.seekPtr = filetable.retrieveInode(fEnt).length + offset; break; // If END, seek pointer is relative to EOF
 		default: return -1; 							// Error, seek pointer stays the same
 		}
 		

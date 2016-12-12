@@ -10,6 +10,9 @@ import java.util.Vector;
 public class FileTable {
 
 	private Vector<FileTableEntry> table;       // the actual entity of this file table
+	
+	private Vector<Inode> inodes;
+	
 	private Directory dir;        				// the root directory 
 	private enum flag {
 		READ,
@@ -29,6 +32,7 @@ public class FileTable {
 	public FileTable( Directory directory ) {   // constructor
 		table = new Vector<FileTableEntry>( );  // instantiate a file (structure) table
 		dir = directory;           				// receive a reference to the Director
+		inodes = new Vector<Inode>();
 	}                              				// from the file system
 
 	/**
@@ -52,8 +56,14 @@ public class FileTable {
 			iNumber = filename.equals("/") ? 0 : dir.namei(filename); // determines filename
 
 		if(iNumber >= 0) {						// If valid,																				
-				inode = new Inode(iNumber);		// make new Inode
-			
+				//inode = new Inode(iNumber);		// make new Inode
+				if (iNumber >= inodes.size())
+				{
+					// We should have already created it, but there is that situation where root is created
+					//	before it gets an Inode assigned
+					inodes.add(new Inode(iNumber));
+				}
+				inode = inodes.get(iNumber);
 			
 			
 				if(mode.equals("r")) {			// If mode is Read,
@@ -78,7 +88,9 @@ public class FileTable {
 			} else { 							// No file was found 
 				if(allModesNoRead) {			// and no Read
 					iNumber = dir.ialloc(filename);	// allocate/retrieve and register the corresponding inode using dir 
+					
 					inode = new Inode(iNumber);
+					inodes.add(inode);
 					
 					break;	
 				} else if(!allModesNoRead) {	// If Read,
@@ -90,7 +102,7 @@ public class FileTable {
 		inode.count++;							// Increment Inode's count
 		inode.toDisk(iNumber);					// Immediately write back this inode to the disk
 
-		FileTableEntry entry = new FileTableEntry(inode, iNumber, mode);
+		FileTableEntry entry = new FileTableEntry(this, iNumber, mode);
 		table.addElement(entry);				// Return a reference to this file (structure) table entry
 
 		return entry;
@@ -107,8 +119,11 @@ public class FileTable {
 	 */
 	public synchronized boolean ffree( FileTableEntry e ) {
 		
-		Inode inode = new Inode(e.iNumber); // Receive file table entry reference and 
-											
+		//Inode inode = new Inode(e.iNumber); // Receive file table entry reference and 
+		Inode inode = inodes.get(e.iNumber);
+		
+		
+		
 		inode.count--;						// Decrement Inode's count
 		inode.toDisk(e.iNumber);			// Save Inode to the disk 
 		
@@ -123,4 +138,13 @@ public class FileTable {
 	public synchronized boolean fempty( ) {
 		return table.isEmpty( );  // return if table is empty 
 	}                             // should be called before starting a format
+	
+	public synchronized Inode retrieveInode(FileTableEntry entry)
+	{
+		return inodes.get(entry.iNumber);
+	}
+	public synchronized Inode retrieveInode(int iNumber)
+	{
+		return inodes.get(iNumber);
+	}
 }

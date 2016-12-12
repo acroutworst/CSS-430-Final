@@ -188,7 +188,7 @@ public class Inode {
         return SysLib.bytes2short(data, (blk * 2));			// Convert bytes to short				
 	}
 	
-	public boolean setTargetBlock(int offset, short targetBlock) {
+	public boolean setTargetBlock(int offset, short targetBlock, short iNumber) {
 		short blk = (short)(offset / Disk.blockSize);
 		byte[] data = new byte[Disk.blockSize];
 		
@@ -201,6 +201,7 @@ public class Inode {
 				direct[blk] = targetBlock;
 				// I would want to store the Inode here, but it's not exactly practical
 				// So we have to wait for the regular storage calls when Kernel shuts down
+				toDisk(iNumber);
 				return true;
 			}
 			return false;
@@ -208,6 +209,8 @@ public class Inode {
 		
 		// Stage Two: Checking the indirect block
 		blk -= direct.length;
+		
+//		if ()
 		
 		SysLib.rawread(indirect, data);
 		
