@@ -134,16 +134,11 @@ public class FileSystem {
 			{
 				readInto = Disk.blockSize - (intraBlockOffset + bytesRead);
 			}
+			if (filetable.retrieveInode(entry).length - bytesRead < readInto)
+			{
+				readInto = filetable.retrieveInode(entry).length - bytesRead;
+			}
 			SysLib.rawread(blockNumber, blockData);
-			
-			if (readInto > blockData.length)
-				SysLib.cout("readInto greater\n");
-			
-			if (intraBlockOffset > blockData.length)
-				SysLib.cout("intraBlock greater\n");
-			
-			if (bytesRead > buffer.length)
-				SysLib.cout("bytesRead greater\n");
 			
 			System.arraycopy(blockData, intraBlockOffset, buffer, bytesRead, readInto);
 			
