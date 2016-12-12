@@ -39,27 +39,27 @@ public class Inode {
 	 * @param iNumber The ID of the Inode to pull from the Disk.
 	 */
 	Inode( short iNumber ) {                       // retrieving inode from disk
-		// design it by yourself.
-		byte[] blockData = new byte[Disk.blockSize];
+
+		byte[] blockData = new byte[Disk.blockSize];			// Set the block data
 		
-		int blockNumber = iNodeStorageBlock + iNumber / numINodesPerBlock;
+		int blockNumber = iNodeStorageBlock + iNumber / numINodesPerBlock; // Get block number
 		
-		SysLib.rawread(blockNumber, blockData);
-		ByteBuffer builder = ByteBuffer.allocate(iNodeSize);
-		builder.put(blockData, iNodeSize * (iNumber % numINodesPerBlock), iNodeSize);
+		SysLib.rawread(blockNumber, blockData);					// Read data block
+		ByteBuffer builder = ByteBuffer.allocate(iNodeSize);	// Allocate space for 32 bytes (total Inode data)
+		builder.put(blockData, iNodeSize * (iNumber % numINodesPerBlock), iNodeSize); // Fill buffer with array info
 		
-		builder.rewind();
+		builder.rewind();										// Rewinds buffer position
 		
-		length = builder.getInt();
-		count = builder.getShort();
-		flag = builder.getShort();
+		length = builder.getInt();								// Reads next 4 bytes (int)
+		count = builder.getShort();								// Reads next 2 bytes (short)
+		flag = builder.getShort();								// Reads next 2 bytes (short)
 		
-		for (int i = 0; i < direct.length; i++)
+		for (int i = 0; i < direct.length; i++)					// Traverse through direct block,
 		{
-			direct[i] = builder.getShort();
+			direct[i] = builder.getShort();						// and get next 2 bytes (short) of each direct block
 		}
 		
-		indirect = builder.getShort();
+		indirect = builder.getShort();							// Reads last 2 bytes (short) for indirect block
 	}
 
 	/**
@@ -70,35 +70,36 @@ public class Inode {
 	 */
 	synchronized int toDisk( short iNumber ) {                  // save to disk as the i-th inode
 		
-		byte[] blockData = new byte[Disk.blockSize];
+		byte[] blockData = new byte[Disk.blockSize];			// Get block data	
 		
-		ByteBuffer aggregator = ByteBuffer.allocate(iNodeSize);
-		aggregator.putInt(length);
-		aggregator.putShort(count);
-		aggregator.putShort(flag);
+		ByteBuffer aggregator = ByteBuffer.allocate(iNodeSize); // Assign buffer length
+		aggregator.putInt(length);								// Get next 4 bytes (int)	
+		aggregator.putShort(count);								// Reads next 2 bytes (short)
+		aggregator.putShort(flag);								// Reads next 2 bytes (short)
 		
-		for (short sh : direct)
-			aggregator.putShort(sh);
+		for (short sh : direct)									// Traverse direct blocks
+			aggregator.putShort(sh);							// Read next 2 bytes (short) for each block
 		
-		aggregator.putShort(indirect);
+		aggregator.putShort(indirect);							// Get last 2 bytes (short) for indirect block
 		
-		int blockNumber = iNodeStorageBlock + iNumber / numINodesPerBlock;
+		int blockNumber = iNodeStorageBlock + iNumber / numINodesPerBlock; // Get Block number
 		
-		SysLib.rawread(blockNumber, blockData);
+		SysLib.rawread(blockNumber, blockData);					// Read block info
 		
-		int arrayIndex = iNodeSize * (iNumber % numINodesPerBlock);
+		int arrayIndex = iNodeSize * (iNumber % numINodesPerBlock);	// Get array index
 		
-		System.arraycopy(aggregator.array(), 0, blockData, arrayIndex, iNodeSize);
-		
-		SysLib.rawwrite(blockNumber, blockData);
+		System.arraycopy(aggregator.array(), 0, blockData, arrayIndex, iNodeSize); // Copy array from buffer 
+																				   // to index in block
+		SysLib.rawwrite(blockNumber, blockData);				// Write the block			
 		
 		// TODO: Look into when the operations can fail, particularly the read and write operations
-		return 0;
+		return 0;												// Return valid (wrote to disk)
 	}
 	
 	/**
 	 * 
 	 * CHANGE THIS METHOD
+	 * Get index block for this Inode
 	 * 
 	 * @return The index block for this Inode
 	 */
@@ -114,21 +115,21 @@ public class Inode {
 	 */
 	public boolean setIndexBlock(short indexBlockNumber) {
 		
-		if(indirect == -1) {
-			indirect = indexBlockNumber;
-			byte[] data = new byte[Disk.blockSize];
+		if(indirect == -1) {								// If indirect,
+			indirect = indexBlockNumber;					// Set index block to indirect
+			byte[] data = new byte[Disk.blockSize];			// Set block data size
 			
-			for(int i = 0; i < (Disk.blockSize / 2); i++) {
-				short offset = (short) (i);
-				SysLib.short2bytes(indirect, data, offset);
+			for(int i = 0; i < (Disk.blockSize / 2); i++) {	// Traverse through block
+				short offset = (short) (i);					// Get offset
+				SysLib.short2bytes(indirect, data, offset); // Convert short to bytes
 			}
 			
-			SysLib.rawwrite(indexBlockNumber, data);
+			SysLib.rawwrite(indexBlockNumber, data);		// Write block info
 			
-			return true;
+			return true;									// If everything went well, return true
 		}
 		
-		return false;
+		return false;										// Otherwise, return false
 	}
 	
 	/**
@@ -139,21 +140,21 @@ public class Inode {
 	 */
 	public int findTargetBlock(int offset) {
 		
-        short blk = (short)(offset / Disk.blockSize);
-        byte[] data = new byte[Disk.blockSize];
+        short blk = (short)(offset / Disk.blockSize);		// Create and save Block at offset
+        byte[] data = new byte[Disk.blockSize];				// Create block size
         
-        if(blk < direct.length) {
-        	return direct[blk];
+        if(blk < direct.length) {							// If block is direct,
+        	return direct[blk];								// return direct block
         }
         
-        if(indirect < 0) {
-        	return -1;
+        if(indirect < 0) {									// If indirect,
+        	return -1;										// return -1 (indirect)
         }
         
-        blk -= direct.length;
+        blk -= direct.length;								// Decrement block count
         
-        SysLib.rawread(indirect, data);
+        SysLib.rawread(indirect, data);						// Read indirect block data
         
-        return SysLib.bytes2short(data, (blk * 2));
+        return SysLib.bytes2short(data, (blk * 2));			// Convert bytes to short				
 	}
 }
