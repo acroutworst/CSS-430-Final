@@ -104,7 +104,35 @@ public class Inode {
 	 * @return The index block for this Inode
 	 */
 	public short getIndexBlockNumber() {
-		return indirect;
+		short offset = 0;
+		FileTableEntry fEnt = new FileTableEntry(null, offset, null);
+		int entrySeek = fEnt.seekPtr;
+		SuperBlock superblock = new SuperBlock(48);
+		offset = (short) superblock.getFreeBlock();
+		
+		int result = entrySeek / Disk.blockSize;				// Find seek pointer / 512 (disk block) 			
+		
+		boolean bResult = result < direct.length;				// If seek/disk block is less than the direct block length
+		
+		if(bResult && (direct[result] < 0 || result < 0)) {		// If seek/disk block is less than the direct block length,
+																// and result is below 0 
+			direct[result] = offset;							// Assign offset to direct block 	
+			
+			return 0;												
+		}
+		
+		if(indirect >= 0) {										// If indirect is not 0 or below,
+			byte[] data = new byte[Disk.blockSize];				// Set data block size
+			SysLib.rawread(indirect, data);						// Read the indirect block
+			
+			int size = (result - direct.length) * 2;			// Find block size  
+			SysLib.short2bytes(offset, data, size);				// Convert short to bytes
+			SysLib.rawwrite(indirect, data);					// Write back the indirect block
+			
+			return 0;
+		} else {
+			return -2;											// Return corresponding value for file system
+		}
 	}
 	
 	/**
@@ -116,13 +144,14 @@ public class Inode {
 	public boolean setIndexBlock(short indexBlockNumber) {
 		
 		if(indirect == -1) {								// If indirect,
-			indirect = indexBlockNumber;					// Set index block to indirect
 			byte[] data = new byte[Disk.blockSize];			// Set block data size
 			
 			for(int i = 0; i < (Disk.blockSize / 2); i++) {	// Traverse through block
-				short offset = (short) (i);					// Get offset
-				SysLib.short2bytes(indirect, data, offset); // Convert short to bytes
+				short offset = (short) (i * 2);				// Get offset (multiply by 2 bytes for short in Java)
+				SysLib.short2bytes((short) indirect, data, offset); // Convert short to bytes
 			}
+			
+			indirect = indexBlockNumber;					// Set index block to indirect for write
 			
 			SysLib.rawwrite(indexBlockNumber, data);		// Write block info
 			

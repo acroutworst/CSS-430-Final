@@ -45,32 +45,35 @@ class SuperBlock {
 	 * 
 	 * @param blocks
 	 */
-	
-	// CHANGE THIS METHOD
 	public void format(int blocks) {
 				
-		totalInodes = blocks;
-		inodeBlocks = totalInodes;
+		totalInodes = blocks;							// Set param blocks to total number of Inodes
+		inodeBlocks = totalInodes;						// Assign total number of Inodes to 
 		
-		int iNodesPerBlock = Disk.blockSize / 32;
+		int iNodesPerBlock = Disk.blockSize / 32;		// There are 16 iNodes per block (512 / 32)
 		
-		int numINodeStorageBlocks = (int) Math.ceil(blocks / iNodesPerBlock);
+		int numINodeStorageBlocks = (int) Math.ceil(blocks / iNodesPerBlock); // Find the number of Inode storage blocks
 		
-		this.freeList = numINodeStorageBlocks + 1;
+		this.freeList = numINodeStorageBlocks + 1;		// Increment number of Inode blocks 
+														// and assign it to the list of free blocks
+
+		byte[] data = new byte[Disk.blockSize];			// Set data block size	
+		Inode emptyINodes = null;						// Set empty iNode
 		
-		byte[] data = new byte[Disk.blockSize];
-		
-		SysLib.int2bytes(freeList+1, data, 0);
-		SysLib.rawwrite(freeList, data);
-		
-		for (int iter = freeList; iter < totalBlocks ; iter++)
-		{
-			
-			SysLib.int2bytes(iter + 1, data, 0);
-			SysLib.rawwrite(iter, data);
+		for (int iter = 0; iter < totalInodes; iter++) { // Iterate through iNodes
+			emptyINodes = new Inode();					// Create new iNode
+			emptyINodes.toDisk((short)iter);			// Write iNode to disk
 		}
 		
-		sync();
+		SysLib.int2bytes(freeList+1, data, 0);			// Convert int to bytes of free list
+		SysLib.rawwrite(freeList, data);				// Now write the free list
+		
+		for (int iter = freeList; iter < totalBlocks; iter++) { // Iterate through total blocks
+			SysLib.int2bytes(iter + 1, data, 0);		// Convert int to bytes
+			SysLib.rawwrite(iter, data);				// Write to disk
+		}
+		
+		sync();											// Sync to disk
 	}
 	
 	
