@@ -67,7 +67,7 @@ public class Kernel
 	private static BufferedReader input
 	= new BufferedReader( new InputStreamReader( System.in ) );
 
-	// FileSystem Instantiation with 1000 files
+	// Declare FileSystem 
 	private static FileSystem fs;
 
 	// The heart of Kernel
@@ -92,7 +92,7 @@ public class Kernel
 				ioQueue = new SyncQueue( );
 				waitQueue = new SyncQueue( scheduler.getMaxThreads( ) );
 				
-				// instantiate a file system
+				// instantiate a file system with 1000 files
 				fs = new FileSystem(1000);
 				
 				return OK;
@@ -179,7 +179,12 @@ public class Kernel
 					System.out.println("threadOS: caused read errors");
 					return ERROR;
 				}
-				//return fs.read( fs.open, (byte[])args );	// TODO: Link together read method
+				
+				if ((myTcb = scheduler.getMyTcb() ) != null) {
+					FileTableEntry ent = myTcb.getFtEnt(param);
+					if (ent != null)
+						return fs.read(ent, (byte[] )args);
+				}
 				return ERROR;
 			case WRITE:
 				switch ( param ) {
@@ -188,12 +193,18 @@ public class Kernel
 					return ERROR;
 				case STDOUT:
 					System.out.print( (String)args );
-					break;
+					return OK;
 				case STDERR:
 					System.err.print( (String)args );
-					break;
+					return OK;
 				}
-				return OK;
+				
+				if ((myTcb = scheduler.getMyTcb() ) != null) {
+					FileTableEntry ent = myTcb.getFtEnt(param);
+					if (ent != null)
+						return fs.write(ent, (byte[] )args);
+				}
+				return ERROR;
 			case CREAD:   // to be implemented in assignment 4
 				return cache.read( param, ( byte[] )args ) ? OK : ERROR;
 			case CWRITE:  // to be implemented in assignment 4

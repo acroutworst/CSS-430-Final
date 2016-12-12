@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
 
 public class Inode {
 	private final static int iNodeSize = 32;       // fix to 32 bytes
-	private final static int directSize = 11;      // # direct pointers
+	public final static int directSize = 11;      // # direct pointers
 	
 	private final static int iNodeStorageBlock = 1;	// Location that Inodes are stored on the disk
 	private final static int numINodesPerBlock = Disk.blockSize / iNodeSize;
@@ -98,6 +98,8 @@ public class Inode {
 	
 	/**
 	 * 
+	 * CHANGE THIS METHOD
+	 * 
 	 * @return The index block for this Inode
 	 */
 	public short getIndexBlockNumber() {
@@ -110,11 +112,21 @@ public class Inode {
 	 * @return true when the passed block number is accepted as the index block
 	 */
 	public boolean setIndexBlock(short indexBlockNumber) {
-		if (indirect != -1)
-		{
+		
+		if(indirect == -1) {
 			indirect = indexBlockNumber;
+			byte[] data = new byte[Disk.blockSize];
+			
+			for(int i = 0; i < (Disk.blockSize / 2); i++) {
+				short offset = (short) (i);
+				SysLib.short2bytes(indirect, data, offset);
+			}
+			
+			SysLib.rawwrite(indexBlockNumber, data);
+			
 			return true;
 		}
+		
 		return false;
 	}
 	
@@ -124,18 +136,23 @@ public class Inode {
 	 * @param offset The offset into the File
 	 * @return The block that the data exists in
 	 */
-	public short findTargetBlock(int offset) {
-		short blk = (short)(offset / Disk.blockSize);
+	public int findTargetBlock(int offset) {
 		
-		if (blk < direct.length)
-		{
-			return blk;
-		}
-		blk -= direct.length;
-		
-		byte[] data = new byte[Disk.blockSize];
-		SysLib.rawread(indirect,data);
-		
-		return SysLib.bytes2short(data, (blk * 2));
+        short blk = (short)(offset / Disk.blockSize);
+        byte[] data = new byte[Disk.blockSize];
+        
+        if(blk < direct.length) {
+        	return direct[blk];
+        }
+        
+        if(indirect < 0) {
+        	return -1;
+        }
+        
+        blk -= direct.length;
+        
+        SysLib.rawread(indirect, data);
+        
+        return SysLib.bytes2short(data, (blk * 2));
 	}
 }

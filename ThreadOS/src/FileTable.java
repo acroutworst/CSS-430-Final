@@ -9,95 +9,116 @@ import java.util.Vector;
 
 public class FileTable {
 
-	private Vector<FileTableEntry> table;         // the actual entity of this file table
-	private Directory dir;        // the root directory 
+	private Vector<FileTableEntry> table;       // the actual entity of this file table
+	private Directory dir;        				// the root directory 
 	private enum flag {
 		READ,
 		WRITE
 	}
-	private final int READ = 0;
-	private final int WRITE = 1;
+	private final int READ = 2;					// Read mode
+	private final int WRITE = 3;				// Write mode
+	private final int DELETE = 4;				// If needs to be deleted
+	private final int USED = 0;					// If used
+	private final int UNUSED = 1;				// If unused
+	
+	/**
+	 * Instantiates the file structure table
+	 * 
+	 * @param directory
+	 */
+	public FileTable( Directory directory ) {   // constructor
+		table = new Vector<FileTableEntry>( );  // instantiate a file (structure) table
+		dir = directory;           				// receive a reference to the Director
+	}                              				// from the file system
 
-	public FileTable( Directory directory ) { // constructor
-		table = new Vector( );     // instantiate a file (structure) table
-		dir = directory;           // receive a reference to the Director
-	}                             // from the file system
-
-	// major public methods
+	/**
+	 * allocate a new file (structure) table entry for this file name
+	 * allocate/retrieve and register the corresponding inode using dir
+	 * increment this inode's count
+	 * immediately write back this inode to the disk
+	 * return a reference to this file (structure) table entry
+	 * 
+	 * @param filename The name of the file to search for
+	 * @param mode Read, Write, W+, or Append
+	 * @return
+	 */
 	public synchronized FileTableEntry falloc( String filename, String mode ) {
-		// allocate a new file (structure) table entry for this file name
-		// allocate/retrieve and register the corresponding inode using dir
-		// increment this inode's count
-		// immediately write back this inode to the disk
-		// return a reference to this file (structure) table entry
 
-		short iNumber = -1;
-		Inode inode = null;
+		short iNumber = -1;						// iNumber									
+		Inode inode = null;						// Declared Inode
+		boolean allModesNoRead = (mode.equals("w") || mode.equals("w+") || mode.equals("a")); // All modes except READ 
 
 		while(true) {
-			iNumber = filename.equals("/") ? 0 : dir.namei(filename);
+			iNumber = filename.equals("/") ? 0 : dir.namei(filename); // determines filename
 
-			if(iNumber >= 0) {
-				inode = new Inode(iNumber);
+		if(iNumber >= 0) {						// If valid,																				
+				inode = new Inode(iNumber);		// make new Inode
 
-				if(mode.equals("r")) {
-					if(inode.flag == READ) {
-						break;
-					} else if(inode.flag == WRITE) {
-						try { 
+				if(mode.equals("r")) {			// If mode is Read,
+					if(inode.flag == READ || inode.flag == USED || inode.flag == UNUSED ) { // and if not write,
+						break;					// no need to wait
+					} else if(inode.flag == WRITE) { // If Write,
+						try { 					// wait for a write to exit
 							wait(); 
 						} catch (InterruptedException e) { }
-					} else {
+					} else {					// no more open
 						iNumber = -1;
 						return null;
 					}
-				} else if(mode.equals("w")) {
-					// Cannot write after write
-					if(inode.flag == READ) {
-						break;
+				} else {						// If not Read,							
+					if(inode.flag == USED || inode.flag == UNUSED || inode.flag == WRITE) { // and if not read,
+						break;					// no need to wait
 					} else {
-						iNumber = -1;
+						iNumber = -1;			// no more open
 						return null;
 					}
 				}
-			}
-			else	// No file was found
-			{
-				if(mode.equals("r")) {
-					return null;
-				} else if(mode.equals("w") || mode.equals("w+") || mode.equals("a")) {
-					iNumber = dir.ialloc(filename);
-					
+			} else { 							// No file was found 
+				if(allModesNoRead) {			// and no Read
+					iNumber = dir.ialloc(filename);	// allocate/retrieve and register the corresponding inode using dir 
 					inode = new Inode(iNumber);
 					
-					break;
+					break;	
+				} else if(!allModesNoRead) {	// If Read,
+					return null;				// return null reference
 				} 
 			}
 		}
 
-		inode.count++;
-		inode.toDisk(iNumber);
+		inode.count++;							// Increment Inode's count
+		inode.toDisk(iNumber);					// Immediately write back this inode to the disk
 
 		FileTableEntry entry = new FileTableEntry(inode, iNumber, mode);
-		table.addElement(entry);
+		table.addElement(entry);				// Return a reference to this file (structure) table entry
 
 		return entry;
 	}
 
+	/**
+	 * receive a file table entry reference 
+	 * save the corresponding inode to the disk
+	 * free this file table entry 
+	 * return true if this file table entry found in my table
+	 * 
+	 * @param e The file table entry that is to be freed
+	 * @return
+	 */
 	public synchronized boolean ffree( FileTableEntry e ) {
-		// receive a file table entry reference
-		// save the corresponding inode to the disk
-		// free this file table entry.
-		// return true if this file table entry found in my table
-
-		e.inode.toDisk(e.iNumber);
-
-		return table.remove(e);
-
-		//		return false;	// TODO: Actually write this
+		
+		Inode inode = new Inode(e.iNumber); // Receive file table entry reference and 
+											
+		inode.count--;						// Decrement Inode's count
+		inode.toDisk(e.iNumber);			// Save Inode to the disk 
+		
+		return table.remove(e);				// Free the entry and return if it's found
 	}
 
+	/**
+	 * Determine if table is empty
+	 * 
+	 * @return
+	 */
 	public synchronized boolean fempty( ) {
 		return table.isEmpty( );  // return if table is empty 
-	}                            // should be called before starting a format
+	}                             // should be called before starting a format
 }

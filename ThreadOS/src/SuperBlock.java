@@ -9,8 +9,9 @@ class SuperBlock {
 	public int totalBlocks; // the number of disk blocks
 	public int totalInodes; // the number of inodes
 	public int freeList;    // the block number of the free list's head
-	private final int defaultInodeBlocks = 64;
+	private final int defaultInodeBlocks = 64; // Default total Inode blocks
 	public int inodeBlocks;
+	private final int defaultBlocks = 1000;
 
 	/**
 	 * Creates the first disk block, block 0, the SuperBlock
@@ -44,8 +45,10 @@ class SuperBlock {
 	 * 
 	 * @param blocks
 	 */
+	
+	// CHANGE THIS METHOD
 	public void format(int blocks) {
-		
+				
 		totalInodes = blocks;
 		inodeBlocks = totalInodes;
 		
@@ -57,16 +60,15 @@ class SuperBlock {
 		
 		byte[] data = new byte[Disk.blockSize];
 		
-//		SysLib.int2bytes(freeList+1, data, 0);
-//		SysLib.rawwrite(freeList, data);
-//		
-//		for (int iter = freeList; iter < totalBlocks; iter++)
-//		{
-//			SysLib.int2bytes(iter + 1, data, 0);
-//			
-//			SysLib.rawwrite(iter, data);
-//
-//		}
+		SysLib.int2bytes(freeList+1, data, 0);
+		SysLib.rawwrite(freeList, data);
+		
+		for (int iter = freeList; iter < totalBlocks ; iter++)
+		{
+			
+			SysLib.int2bytes(iter + 1, data, 0);
+			SysLib.rawwrite(iter, data);
+		}
 		
 		sync();
 	}
