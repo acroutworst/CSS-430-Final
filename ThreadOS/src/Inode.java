@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
 
 public class Inode {
 	private final static int iNodeSize = 32;       // fix to 32 bytes
-	public final static int directSize = 11;      // # direct pointers
+	public final static int directSize = 11;       // # direct pointers
 	
 	private final static int iNodeStorageBlock = 1;	// Location that Inodes are stored on the disk
 	private final static int numINodesPerBlock = Disk.blockSize / iNodeSize;
@@ -34,6 +34,7 @@ public class Inode {
 	}
 
 	/**
+	 * Inode constructor - Defines the contents of the Inode 
 	 * 
 	 * @param iNumber The ID of the Inode to pull from the Disk.
 	 */
@@ -85,7 +86,6 @@ public class Inode {
 		
 		SysLib.rawread(blockNumber, blockData);
 		
-//		int arrayIndex = iNodeSize * iNumber;
 		int arrayIndex = iNodeSize * (iNumber % numINodesPerBlock);
 		
 		System.arraycopy(aggregator.array(), 0, blockData, arrayIndex, iNodeSize);
@@ -107,6 +107,7 @@ public class Inode {
 	}
 	
 	/**
+	 * Set the IndexBlock based on Direct or Indirect
 	 * 
 	 * @param indexBlockNumber The block to use as the index block for this Inode
 	 * @return true when the passed block number is accepted as the index block
