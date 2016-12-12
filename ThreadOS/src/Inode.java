@@ -104,35 +104,36 @@ public class Inode {
 	 * @return The index block for this Inode
 	 */
 	public short getIndexBlockNumber() {
-		short offset = 0;
-		FileTableEntry fEnt = new FileTableEntry(null, offset, null);
-		int entrySeek = fEnt.seekPtr;
-		SuperBlock superblock = new SuperBlock(48);
-		offset = (short) superblock.getFreeBlock();
-		
-		int result = entrySeek / Disk.blockSize;				// Find seek pointer / 512 (disk block) 			
-		
-		boolean bResult = result < direct.length;				// If seek/disk block is less than the direct block length
-		
-		if(bResult && (direct[result] < 0 || result < 0)) {		// If seek/disk block is less than the direct block length,
-																// and result is below 0 
-			direct[result] = offset;							// Assign offset to direct block 	
-			
-			return 0;												
-		}
-		
-		if(indirect >= 0) {										// If indirect is not 0 or below,
-			byte[] data = new byte[Disk.blockSize];				// Set data block size
-			SysLib.rawread(indirect, data);						// Read the indirect block
-			
-			int size = (result - direct.length) * 2;			// Find block size  
-			SysLib.short2bytes(offset, data, size);				// Convert short to bytes
-			SysLib.rawwrite(indirect, data);					// Write back the indirect block
-			
-			return 0;
-		} else {
-			return -2;											// Return corresponding value for file system
-		}
+//		short offset = 0;
+//		FileTableEntry fEnt = new FileTableEntry(null, offset, null);
+//		int entrySeek = fEnt.seekPtr;
+//		SuperBlock superblock = new SuperBlock(48);
+//		offset = (short) superblock.getFreeBlock();
+//		
+//		int result = entrySeek / Disk.blockSize;				// Find seek pointer / 512 (disk block) 			
+//		
+//		boolean bResult = result < direct.length;				// If seek/disk block is less than the direct block length
+//		
+//		if(bResult && (direct[result] < 0 || result < 0)) {		// If seek/disk block is less than the direct block length,
+//																// and result is below 0 
+//			direct[result] = offset;							// Assign offset to direct block 	
+//			
+//			return 0;												
+//		}
+//		
+//		if(indirect >= 0) {										// If indirect is not 0 or below,
+//			byte[] data = new byte[Disk.blockSize];				// Set data block size
+//			SysLib.rawread(indirect, data);						// Read the indirect block
+//			
+//			int size = (result - direct.length) * 2;			// Find block size  
+//			SysLib.short2bytes(offset, data, size);				// Convert short to bytes
+//			SysLib.rawwrite(indirect, data);					// Write back the indirect block
+//			
+//			return 0;
+//		} else {
+//			return -2;											// Return corresponding value for file system
+//		}
+		return indirect;
 	}
 	
 	/**
@@ -185,5 +186,39 @@ public class Inode {
         SysLib.rawread(indirect, data);						// Read indirect block data
         
         return SysLib.bytes2short(data, (blk * 2));			// Convert bytes to short				
+	}
+	
+	public boolean setTargetBlock(int offset, short targetBlock) {
+		short blk = (short)(offset / Disk.blockSize);
+		byte[] data = new byte[Disk.blockSize];
+		
+		// Two stages
+		// Stage One: Checking the direct blocks
+		if (blk < direct.length)
+		{
+			if (direct[blk] == -1)
+			{
+				direct[blk] = targetBlock;
+				// I would want to store the Inode here, but it's not exactly practical
+				// So we have to wait for the regular storage calls when Kernel shuts down
+				return true;
+			}
+			return false;
+		}
+		
+		// Stage Two: Checking the indirect block
+		blk -= direct.length;
+		
+		SysLib.rawread(indirect, data);
+		
+		if (SysLib.bytes2short(data, blk * 2) == -1)
+		{
+			SysLib.short2bytes(targetBlock, data, blk * 2);
+			
+			// It actually is practical to store the block here though, so we definitely do that
+			SysLib.rawwrite(indirect, data);
+			return true;
+		}
+		return false;
 	}
 }

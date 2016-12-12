@@ -106,7 +106,33 @@ public class FileSystem {
 	 * @return
 	 */
 	public synchronized int read(FileTableEntry entry, byte[] buffer) {
-		return 0;
+		if (!entry.mode.equals("r"))
+		{
+			return 0;				// Don't read if the mode isn't set to it
+		}
+		int blockNumber = entry.inode.findTargetBlock(entry.seekPtr);
+		int intraBlockOffset = entry.seekPtr % Disk.blockSize;			// Find out where to start reading in the block
+		int bytesRead = 0;
+		
+		byte[] blockData = new byte[Disk.blockSize];
+		SysLib.rawread(blockNumber, blockData);
+		
+		while (bytesRead < buffer.length && bytesRead + entry.seekPtr < entry.inode.length)
+		{
+			int readInto = (buffer.length > Disk.blockSize ? Disk.blockSize : buffer.length) - intraBlockOffset;
+			
+			SysLib.rawread(blockNumber, blockData);
+			
+			System.arraycopy(blockData, intraBlockOffset, buffer, bytesRead, readInto);
+			
+			bytesRead += readInto;
+			intraBlockOffset = 0;
+			blockNumber++;
+			
+		}
+		
+		entry.seekPtr += bytesRead;
+		return bytesRead;
 	}
 	
 	/**
@@ -117,7 +143,54 @@ public class FileSystem {
 	 * @return
 	 */
 	public synchronized int write(FileTableEntry entry, byte[] buffer) {
-		return 0;
+		if (entry.mode.equals("r"))
+		{
+			return 0;				// Don't write when the mode is to read
+		}
+		
+		//int blockNumber = entry.inode.findTargetBlock(entry.seekPtr);
+		int blockNumber;
+		int intraBlockOffset = entry.seekPtr % Disk.blockSize;			// Find out where to start writing in the block
+		int bytesWritten = 0;
+		
+		byte[] blockData = new byte[Disk.blockSize];
+		//SysLib.rawread(blockNumber, blockData);
+		
+		while (bytesWritten < buffer.length)
+		{
+			
+			blockNumber = entry.inode.findTargetBlock(entry.seekPtr + bytesWritten);
+			
+			int writeInto = (buffer.length > Disk.blockSize ? Disk.blockSize : buffer.length) - intraBlockOffset;
+			
+			if (blockNumber == -1)
+			{
+				entry.inode.setTargetBlock(entry.seekPtr+bytesWritten, (short)superblock.getFreeBlock());
+				blockNumber = entry.inode.findTargetBlock(entry.seekPtr + bytesWritten);
+			}
+			// TODO: Maybe link these two if statements together into an else if so that we won't accidently read from a baby block
+			
+			// Only read from the Disk if there is a need
+			if (writeInto > 0 || buffer.length - bytesWritten < Disk.blockSize)		// TODO: Check on this one, I'm not entirely sure on it
+				SysLib.rawread(blockNumber, blockData);
+			
+			System.arraycopy(buffer, bytesWritten, blockData, intraBlockOffset, writeInto);
+			
+			bytesWritten += writeInto;
+			intraBlockOffset = 0;				// Set it to zero because from now on we start at the beginning of the block
+			
+			SysLib.rawwrite(blockNumber, blockData);
+			
+		}
+		
+		entry.seekPtr += bytesWritten;
+		
+		if (entry.seekPtr > entry.inode.length)
+		{
+			entry.inode.length = entry.seekPtr;
+		}
+		
+		return bytesWritten;
 	}
 	
 	/**

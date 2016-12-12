@@ -53,7 +53,9 @@ public class FileTable {
 
 		if(iNumber >= 0) {						// If valid,																				
 				inode = new Inode(iNumber);		// make new Inode
-
+			
+			
+			
 				if(mode.equals("r")) {			// If mode is Read,
 					if(inode.flag == READ || inode.flag == USED || inode.flag == UNUSED ) { // and if not write,
 						break;					// no need to wait

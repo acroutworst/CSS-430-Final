@@ -60,11 +60,6 @@ class SuperBlock {
 		byte[] data = new byte[Disk.blockSize];			// Set data block size	
 		Inode emptyINodes = null;						// Set empty iNode
 		
-		for (int iter = 0; iter < totalInodes; iter++) { // Iterate through iNodes
-			emptyINodes = new Inode();					// Create new iNode
-			emptyINodes.toDisk((short)iter);			// Write iNode to disk
-		}
-		
 		SysLib.int2bytes(freeList+1, data, 0);			// Convert int to bytes of free list
 		SysLib.rawwrite(freeList, data);				// Now write the free list
 		
@@ -72,6 +67,23 @@ class SuperBlock {
 			SysLib.int2bytes(iter + 1, data, 0);		// Convert int to bytes
 			SysLib.rawwrite(iter, data);				// Write to disk
 		}
+		
+		for (int iter = 0; iter < totalInodes; iter++) { // Iterate through iNodes
+			emptyINodes = new Inode();					// Create new iNode
+			
+			emptyINodes.setIndexBlock((short)this.getFreeBlock());	// Set the index block now so that we don't worry about it
+			
+			byte[] indexData = new byte[Disk.blockSize];
+			for (int ind = 0; ind < indexData.length; ind+= 2)
+			{
+				SysLib.short2bytes((short)-1, indexData, ind);
+			}
+			SysLib.rawwrite(emptyINodes.getIndexBlockNumber(), indexData);
+			
+			emptyINodes.toDisk((short)iter);			// Write iNode to disk
+		}
+		
+		
 		
 		sync();											// Sync to disk
 	}
