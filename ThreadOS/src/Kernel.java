@@ -86,7 +86,7 @@ public class Kernel
 				disk.start( );
 
 				// instantiate a cache memory
-				cache = new Cache( disk.blockSize, 10 );
+				cache = new Cache( Disk.blockSize, 10 );
 				
 				// instantiate synchronized queues
 				ioQueue = new SyncQueue( );

@@ -9,8 +9,8 @@ class SuperBlock {
 	public int totalBlocks; // the number of disk blocks
 	public int totalInodes; // the number of inodes
 	public int freeList;    // the block number of the free list's head
+	
 	private final int defaultInodeBlocks = 64; // Default total Inode blocks
-	public int inodeBlocks;
 	private final int defaultBlocks = 1000;
 
 	/**
@@ -25,8 +25,6 @@ class SuperBlock {
 		
 		totalBlocks = SysLib.bytes2int(blockData, 0);	// Convert bytes to int
 		totalInodes = SysLib.bytes2int(blockData, 4);	// Convert bytes to int with offset of 4 
-		
-		inodeBlocks = totalInodes;		// TODO: Might not be entirely accurate, maybe changes based on how many files there are currently
 		
 		freeList = SysLib.bytes2int(blockData, 8);		// Convert bytes to int with offset of 8
 		
@@ -48,8 +46,7 @@ class SuperBlock {
 	public void format(int blocks) {
 				
 		totalInodes = blocks;							// Set param blocks to total number of Inodes
-		inodeBlocks = totalInodes;						// Assign total number of Inodes to 
-		
+
 		int iNodesPerBlock = Disk.blockSize / 32;		// There are 16 iNodes per block (512 / 32)
 		
 		int numINodeStorageBlocks = (int) Math.ceil(blocks / iNodesPerBlock); // Find the number of Inode storage blocks
@@ -118,6 +115,9 @@ class SuperBlock {
 		
 		int tmp = freeList;									// Save free list
 		freeList = result;									// Assign converted int to free list 
+		
+		if (tmp == 0)
+			SysLib.cerr("Returning 0 as free block.\n");
 			
 		return tmp;											// and return list of free blocks
 	}
@@ -127,6 +127,9 @@ class SuperBlock {
 	 * @param blockNumber
 	 */
 	public void returnBlock(int blockNumber) {
+		
+		if (blockNumber == 0)
+			SysLib.cerr("Returning 0\n");
 		
 		byte[] data = new byte[Disk.blockSize];				// Set block data size
 		SysLib.int2bytes(freeList, data, 0);				// Convert int to bytes 

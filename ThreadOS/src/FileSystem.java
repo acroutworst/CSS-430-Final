@@ -19,7 +19,7 @@ public class FileSystem {
 	 */
 	public FileSystem(int diskBlocks) {
 		superblock = new SuperBlock(diskBlocks);		// Create the superblock (1st block)
-		dir = new Directory(superblock.inodeBlocks);	// Create the directory
+		dir = new Directory(superblock.totalInodes);	// Create the directory
 		filetable = new FileTable(dir);					// Create the file table
 		
 		FileTableEntry entry = 	open("/", "r");			// Start the file table with its first entry
@@ -201,7 +201,8 @@ public class FileSystem {
 			// TODO: Maybe link these two if statements together into an else if so that we won't accidently read from a baby block
 			
 			// Only read from the Disk if there is a need
-			if (writeInto > 0 || buffer.length - bytesWritten < Disk.blockSize)		// TODO: Check on this one, I'm not entirely sure on it
+			//if (writeInto > 0 || buffer.length - bytesWritten < Disk.blockSize)		// TODO: Check on this one, I'm not entirely sure on it
+			if (intraBlockOffset > 0 || writeInto < Disk.blockSize)
 				SysLib.rawread(blockNumber, blockData);
 			
 			System.arraycopy(buffer, bytesWritten, blockData, intraBlockOffset, writeInto);
@@ -210,7 +211,7 @@ public class FileSystem {
 			intraBlockOffset = 0;				// Set it to zero because from now on we start at the beginning of the block
 			
 			SysLib.rawwrite(blockNumber, blockData);
-			//entry.inode.toDisk(entry.iNumber);
+
 		}
 		
 		entry.seekPtr += bytesWritten;
@@ -234,8 +235,8 @@ public class FileSystem {
 		short i = 0;
 		for (; i < filetable.retrieveInode(fEnt).direct.length; i++) {		// Iterate through direct blocks
 			if (filetable.retrieveInode(fEnt).direct[i] != -1) {			// If not already empty,
+				superblock.returnBlock(filetable.retrieveInode(fEnt).direct[i]);				// Enqueue as free block
 				filetable.retrieveInode(fEnt).direct[i] = -1;				// Assign block as free	
-				superblock.returnBlock(i);				// Enqueue as free block
 			}
 		}
 
