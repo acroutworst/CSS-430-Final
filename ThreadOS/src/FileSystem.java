@@ -188,6 +188,11 @@ public class FileSystem {
 				writeInto = Disk.blockSize - (intraBlockOffset + bytesWritten);
 			}
 			
+			if (writeInto + bytesWritten > buffer.length)
+			{
+				writeInto = buffer.length - bytesWritten;
+			}
+			
 			if (blockNumber == -1)
 			{
 				filetable.retrieveInode(entry).setTargetBlock(entry.seekPtr+bytesWritten, superblock, entry.iNumber);
