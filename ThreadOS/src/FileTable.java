@@ -11,13 +11,9 @@ public class FileTable {
 
 	private Vector<FileTableEntry> table;       // the actual entity of this file table
 	
-	private Vector<Inode> inodes;
+	private Vector<Inode> inodes;				// Shared Inodes instance
 	
 	private Directory dir;        				// the root directory 
-	private enum flag {
-		READ,
-		WRITE
-	}
 	private final int READ = 2;					// Read mode
 	private final int WRITE = 3;				// Write mode
 	private final int DELETE = 4;				// If needs to be deleted
@@ -56,11 +52,10 @@ public class FileTable {
 			iNumber = filename.equals("/") ? 0 : dir.namei(filename); // determines filename
 
 		if(iNumber >= 0) {						// If valid,																				
-				//inode = new Inode(iNumber);		// make new Inode
 				if (iNumber >= inodes.size())
 				{
 					// We should have already created it, but there is that situation where root is created
-					//	before it gets an Inode assigned
+					// before it gets an Inode assigned
 					inodes.add(new Inode(iNumber));
 				}
 				inode = inodes.get(iNumber);
@@ -119,7 +114,6 @@ public class FileTable {
 	 */
 	public synchronized boolean ffree( FileTableEntry e ) {
 		
-		//Inode inode = new Inode(e.iNumber); // Receive file table entry reference and 
 		Inode inode = inodes.get(e.iNumber);
 		
 		inode.count--;						// Decrement Inode's count
@@ -137,12 +131,23 @@ public class FileTable {
 		return table.isEmpty( );  // return if table is empty 
 	}                             // should be called before starting a format
 	
-	public synchronized Inode retrieveInode(FileTableEntry entry)
-	{
+	/**
+	 * Get Inode number given an entry
+	 * 
+	 * @param entry
+	 * @return
+	 */
+	public synchronized Inode retrieveInode(FileTableEntry entry) {
 		return inodes.get(entry.iNumber);
 	}
-	public synchronized Inode retrieveInode(int iNumber)
-	{
+	
+	/**
+	 * Get Inode number
+	 * 
+	 * @param iNumber
+	 * @return
+	 */
+	public synchronized Inode retrieveInode(int iNumber) {
 		return inodes.get(iNumber);
 	}
 }

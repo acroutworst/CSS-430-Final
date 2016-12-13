@@ -26,7 +26,6 @@ public class Inode {
 	Inode( ) {                                     // a default constructor
 		length = 0;
 		count = 0;
-		// TODO: Look into why the default Inodes would have the flag set to Used
 		flag = 1;
 		for ( int i = 0; i < directSize; i++ )
 			direct[i] = -1;
@@ -54,8 +53,7 @@ public class Inode {
 		count = builder.getShort();								// Reads next 2 bytes (short)
 		flag = builder.getShort();								// Reads next 2 bytes (short)
 		
-		for (int i = 0; i < direct.length; i++)					// Traverse through direct block,
-		{
+		for (int i = 0; i < direct.length; i++)	{				// Traverse through direct block,
 			direct[i] = builder.getShort();						// and get next 2 bytes (short) of each direct block
 		}
 		
@@ -92,13 +90,11 @@ public class Inode {
 																				   // to index in block
 		SysLib.rawwrite(blockNumber, blockData);				// Write the block			
 		
-		// TODO: Look into when the operations can fail, particularly the read and write operations
 		return 0;												// Return valid (wrote to disk)
 	}
 	
 	/**
 	 * 
-	 * CHANGE THIS METHOD
 	 * Get index block for this Inode
 	 * 
 	 * @return The index block for this Inode
@@ -159,16 +155,22 @@ public class Inode {
         return SysLib.bytes2short(data, (blk * 2));			// Convert bytes to short				
 	}
 	
+	/**
+	 * Set an Inode to a block
+	 * 
+	 * @param offset
+	 * @param sBlock
+	 * @param iNumber
+	 * @return
+	 */
 	public boolean setTargetBlock(int offset, SuperBlock sBlock, short iNumber) {
 		short blk = (short)(offset / Disk.blockSize);
 		byte[] data = new byte[Disk.blockSize];
 		
 		// Two stages
 		// Stage One: Checking the direct blocks
-		if (blk < direct.length)
-		{
-			if (direct[blk] == -1)
-			{
+		if (blk < direct.length) {
+			if (direct[blk] == -1) {
 				direct[blk] = (short)sBlock.getFreeBlock();
 				// I would want to store the Inode here, but it's not exactly practical
 				// So we have to wait for the regular storage calls when Kernel shuts down
@@ -181,13 +183,11 @@ public class Inode {
 		// Stage Two: Checking the indirect block
 		blk -= direct.length;
 		
-		if (indirect == -1)
-		{
+		if (indirect == -1) {
 			indirect = (short)sBlock.getFreeBlock();
 			
 			byte[] indexData = new byte[Disk.blockSize];
-			for (int ind = 0; ind < indexData.length; ind+= 2)
-			{
+			for (int ind = 0; ind < indexData.length; ind+= 2) {
 				SysLib.short2bytes((short)-1, indexData, ind);
 			}
 			
@@ -196,8 +196,7 @@ public class Inode {
 		
 		SysLib.rawread(indirect, data);
 		
-		if (SysLib.bytes2short(data, blk * 2) == -1)
-		{
+		if (SysLib.bytes2short(data, blk * 2) == -1) {
 			SysLib.short2bytes((short)sBlock.getFreeBlock(), data, blk * 2);
 			
 			// It actually is practical to store the block here though, so we definitely do that

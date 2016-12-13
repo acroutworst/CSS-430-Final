@@ -39,7 +39,7 @@ public class FileSystem {
 	 * Sync the disk
 	 */
 	void sync() {		
-		superblock.sync();					// Perform a sync call from SuperBlock
+		superblock.sync();							// Perform a sync call from SuperBlock
 	}
 	
 	/**
@@ -95,7 +95,7 @@ public class FileSystem {
 	 * @return
 	 */
 	public synchronized int fsize(FileTableEntry fEnt) {
-		return filetable.retrieveInode(fEnt).length;					// Return inode length in the entry
+		return filetable.retrieveInode(fEnt).length; // Return inode length in the entry
 	}
 	
 	/**
@@ -106,9 +106,8 @@ public class FileSystem {
 	 * @return
 	 */
 	public synchronized int read(FileTableEntry entry, byte[] buffer) {
-		if (!(entry.mode.equals("r") || entry.mode.equals("w+")))
-		{
-			return 0;				// Don't read if the mode isn't set to it
+		if (!(entry.mode.equals("r") || entry.mode.equals("w+"))) {
+			return 0;													// Don't read if the mode isn't set to it
 		}
 		
 		
@@ -124,31 +123,32 @@ public class FileSystem {
 			
 			SysLib.rawread(blockNumber, blockData);
 			
-			//int readInto = (buffer.length > Disk.blockSize - (intraBlockOffset + bytesRead) ? Disk.blockSize - (intraBlockOffset + bytesRead) : buffer.length);
-			int readInto = buffer.length;
-			if (readInto > Disk.blockSize)
-			{
+			int readInto = buffer.length;								// Set buffer size 
+			
+			if (readInto > Disk.blockSize) {							// Check that buffer does not exceed Disk Block
 				readInto = Disk.blockSize;
 			}
-			if (readInto + intraBlockOffset - bytesRead > Disk.blockSize)
-			{
+			
+			if (readInto + intraBlockOffset - bytesRead > Disk.blockSize) { // Check that buffer and offset do not excess Disk Block
 				readInto = Disk.blockSize - (intraBlockOffset + bytesRead);
 			}
-			if (filetable.retrieveInode(entry).length - bytesRead < readInto)
-			{
+			
+			if (filetable.retrieveInode(entry).length - bytesRead < readInto) {
 				readInto = filetable.retrieveInode(entry).length - bytesRead;
 			}
-			SysLib.rawread(blockNumber, blockData);
 			
-			System.arraycopy(blockData, intraBlockOffset, buffer, bytesRead, readInto);
+			SysLib.rawread(blockNumber, blockData);						// Read block's contents
 			
-			bytesRead += readInto;
-			intraBlockOffset = 0;
+			System.arraycopy(blockData, intraBlockOffset, buffer, bytesRead, readInto); // Perform array copy
+			
+			bytesRead += readInto;										// Append buffer to bytes read
+			intraBlockOffset = 0;										// Assign offset as 0
 			
 		}
 		
-		entry.seekPtr += bytesRead;
-		return bytesRead;
+		entry.seekPtr += bytesRead;										// Append Bytes read to seek pointer
+		
+		return bytesRead;												// Return the scanned read blocks	
 	}
 	
 	/**
@@ -161,67 +161,59 @@ public class FileSystem {
 	public synchronized int write(FileTableEntry entry, byte[] buffer) {
 		if (entry.mode.equals("r"))
 		{
-			return 0;				// Don't write when the mode is to read
+			return 0;													// Don't write when the mode is to read
 		}
 		
-		//int blockNumber = entry.inode.findTargetBlock(entry.seekPtr);
 		int blockNumber;
 		int intraBlockOffset = entry.seekPtr % Disk.blockSize;			// Find out where to start writing in the block
-		int bytesWritten = 0;
+		int bytesWritten = 0;											// Set the written bytes
 		
-		byte[] blockData = new byte[Disk.blockSize];
-		//SysLib.rawread(blockNumber, blockData);
+		byte[] blockData = new byte[Disk.blockSize];					
 		
-		while (bytesWritten < buffer.length)
+		while (bytesWritten < buffer.length)							
 		{
 			
-			blockNumber = filetable.retrieveInode(entry).findTargetBlock(entry.seekPtr + bytesWritten);
+			blockNumber = filetable.retrieveInode(entry).findTargetBlock(entry.seekPtr + bytesWritten); // Get target block
 			
-			//int writeInto = (buffer.length > Disk.blockSize ? Disk.blockSize : buffer.length) - intraBlockOffset - bytesWritten;	// Redo this line
-			int writeInto = buffer.length;
-			if (writeInto > Disk.blockSize)
-			{
+			int writeInto = buffer.length;								// Set buffer size
+			
+			if (writeInto > Disk.blockSize) {							// Check to make sure no overflow of Disk Block
 				writeInto = Disk.blockSize;
 			}
-			if (writeInto + intraBlockOffset - bytesWritten > Disk.blockSize)
-			{
+			
+			if (writeInto + intraBlockOffset - bytesWritten > Disk.blockSize) { // Check to see if buffer and offset exceed Disk Block 
 				writeInto = Disk.blockSize - (intraBlockOffset + bytesWritten);
 			}
 			
-			if (writeInto + bytesWritten > buffer.length)
-			{
+			if (writeInto + bytesWritten > buffer.length) {
 				writeInto = buffer.length - bytesWritten;
 			}
 			
-			if (blockNumber == -1)
-			{
+			if (blockNumber == -1) {	
 				filetable.retrieveInode(entry).setTargetBlock(entry.seekPtr+bytesWritten, superblock, entry.iNumber);
 				blockNumber = filetable.retrieveInode(entry).findTargetBlock(entry.seekPtr + bytesWritten);
 			}
-			// TODO: Maybe link these two if statements together into an else if so that we won't accidently read from a baby block
 			
 			// Only read from the Disk if there is a need
-			//if (writeInto > 0 || buffer.length - bytesWritten < Disk.blockSize)		// TODO: Check on this one, I'm not entirely sure on it
 			if (intraBlockOffset > 0 || writeInto < Disk.blockSize)
 				SysLib.rawread(blockNumber, blockData);
 			
 			System.arraycopy(buffer, bytesWritten, blockData, intraBlockOffset, writeInto);
 			
-			bytesWritten += writeInto;
+			bytesWritten += writeInto;											// Append buffer to written blocks
 			intraBlockOffset = 0;				// Set it to zero because from now on we start at the beginning of the block
 			
 			SysLib.rawwrite(blockNumber, blockData);
 
 		}
 		
-		entry.seekPtr += bytesWritten;
+		entry.seekPtr += bytesWritten;											// Append bytes to seek pointer
 		
-		if (entry.seekPtr > filetable.retrieveInode(entry).length)
-		{
+		if (entry.seekPtr > filetable.retrieveInode(entry).length) {
 			filetable.retrieveInode(entry).length = entry.seekPtr;
 		}
 		
-		return bytesWritten;
+		return bytesWritten;													// Return written bytes	
 	}
 	
 	/**
@@ -247,7 +239,7 @@ public class FileSystem {
 		
 		filetable.retrieveInode(fEnt).toDisk(fEnt.iNumber);				// Write blocks back to disk
 						
-		return true;									// If valid, return true
+		return true;													// If valid, return true
 	}
 	
 	/**
@@ -258,7 +250,7 @@ public class FileSystem {
 	 */
 	boolean delete(String filename) {
 		
-		if(filename.length() != 0) {		// If file exists,
+		if(filename.length() != 0) {						// If file exists,
 			FileTableEntry fEnt = open(filename, "w");		// Open the file and give write permissions
 			
 			return dir.ifree(fEnt.iNumber) && close(fEnt);  // Perform a file deletion and close the entry
