@@ -122,8 +122,6 @@ public class FileTable {
 		//Inode inode = new Inode(e.iNumber); // Receive file table entry reference and 
 		Inode inode = inodes.get(e.iNumber);
 		
-		
-		
 		inode.count--;						// Decrement Inode's count
 		inode.toDisk(e.iNumber);			// Save Inode to the disk 
 		

@@ -104,35 +104,6 @@ public class Inode {
 	 * @return The index block for this Inode
 	 */
 	public short getIndexBlockNumber() {
-//		short offset = 0;
-//		FileTableEntry fEnt = new FileTableEntry(null, offset, null);
-//		int entrySeek = fEnt.seekPtr;
-//		SuperBlock superblock = new SuperBlock(48);
-//		offset = (short) superblock.getFreeBlock();
-//		
-//		int result = entrySeek / Disk.blockSize;				// Find seek pointer / 512 (disk block) 			
-//		
-//		boolean bResult = result < direct.length;				// If seek/disk block is less than the direct block length
-//		
-//		if(bResult && (direct[result] < 0 || result < 0)) {		// If seek/disk block is less than the direct block length,
-//																// and result is below 0 
-//			direct[result] = offset;							// Assign offset to direct block 	
-//			
-//			return 0;												
-//		}
-//		
-//		if(indirect >= 0) {										// If indirect is not 0 or below,
-//			byte[] data = new byte[Disk.blockSize];				// Set data block size
-//			SysLib.rawread(indirect, data);						// Read the indirect block
-//			
-//			int size = (result - direct.length) * 2;			// Find block size  
-//			SysLib.short2bytes(offset, data, size);				// Convert short to bytes
-//			SysLib.rawwrite(indirect, data);					// Write back the indirect block
-//			
-//			return 0;
-//		} else {
-//			return -2;											// Return corresponding value for file system
-//		}
 		return indirect;
 	}
 	

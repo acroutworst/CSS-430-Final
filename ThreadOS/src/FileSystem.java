@@ -239,7 +239,12 @@ public class FileSystem {
 				filetable.retrieveInode(fEnt).direct[i] = -1;				// Assign block as free	
 			}
 		}
-
+		
+		if (filetable.retrieveInode(fEnt).indirect != -1)
+		{
+			
+		}
+		
 		filetable.retrieveInode(fEnt).toDisk(fEnt.iNumber);				// Write blocks back to disk
 						
 		return true;									// If valid, return true
